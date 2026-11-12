@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
+#include <iterator>
 
 #define GAME_MAX_BULLETS 128
 
@@ -118,8 +119,8 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
 
     case GLFW_KEY_UP:
     case GLFW_KEY_W:
-        if (action == GLFW_RELEASE) {
-            fire_pressed = false;
+        if (action == GLFW_PRESS) {
+            fire_pressed = true;
         }
         break;
 
@@ -138,6 +139,12 @@ void buffer_clear(Buffer *buffer, std::uint32_t color) {
 
     for (std::size_t i = 0; i < buffer->width * buffer->height; i++) {
         buffer->data[i] = color;
+    }
+}
+
+void buffer_draw_line(Buffer *buffer, std::size_t y, std::uint32_t color) {
+    for (std::size_t x = 0; x < buffer->width; ++x) {
+        buffer->data[y * buffer->width + x] = color;
     }
 }
 
@@ -198,6 +205,46 @@ void buffer_sprite_draw(
     }
 }
 
+void buffer_draw_text(
+    Buffer *buffer,
+    const Sprite &text_spritesheet,
+    const char *text,
+    std::size_t x,
+    std::size_t y,
+    uint32_t color) {
+
+    std::size_t xp = x;
+    std::size_t stride = text_spritesheet.width * text_spritesheet.height;
+    Sprite sprite = text_spritesheet;
+
+    for (const char *charp = text; *charp != '\0'; ++charp) {
+
+        char character = *charp - 32;
+        if (character < 0 || character >= 65) {
+
+            continue;
+        }
+
+        sprite.data = text_spritesheet.data + character * stride;
+        buffer_sprite_draw(buffer, sprite, xp, y, color, 3);
+        xp += (sprite.width + 1) * 3;
+    }
+}
+
+void buffer_draw_number(
+    Buffer *buffer,
+    const Sprite &font,
+    std::size_t number,
+    std::size_t x,
+    std::size_t y,
+    std::uint32_t color) {
+
+    char text[32];
+    std::snprintf(text, sizeof(text), "%zu", number);
+
+    buffer_draw_text(buffer, font, text, x, y, color);
+}
+
 void game_init(Game *game) {
     // game initialization
 
@@ -213,7 +260,7 @@ void game_init(Game *game) {
         for (std::size_t xi = 0; xi < 11; ++xi) {
 
             game->aliens[yi * 11 + xi].x = 36 * xi + 122;
-            game->aliens[yi * 11 + xi].y = 29 * yi + 240;
+            game->aliens[yi * 11 + xi].y = 29 * yi + 260;
 
             if (yi == 4) {
                 game->aliens[yi * 11 + xi].type = ALIEN_TYPE_A;
@@ -228,7 +275,7 @@ void game_init(Game *game) {
     }
     // player position and lives
     game->player.x = 303;
-    game->player.y = 32;
+    game->player.y = 38;
     game->player.life = 3;
 
     // number of bullets
@@ -267,6 +314,16 @@ bool sprite_overlap_check(
     }
 
     return false;
+}
+
+void font_set_glyph(Sprite &font, std::size_t index, const std::uint8_t rows[7]) {
+
+    for (std::size_t y = 0; y < 7; ++y) {
+        for (std::size_t x = 0; x < 5; ++x) {
+
+            font.data[index * 35 + y * 5 + x] = (rows[y] >> (4 - x)) & 1;
+        }
+    }
 }
 
 int main() {
@@ -380,6 +437,135 @@ int main() {
     bullet_sprite.height = 3;
     bullet_sprite.data = bullet_data;
 
+    // Font for the Score
+    Sprite font_sprite;
+    font_sprite.width = 5;
+    font_sprite.height = 7;
+
+    font_sprite.data = new uint8_t[65 * 5 * 7]{};
+
+    // Font: A-F
+    const std::uint8_t glyph_A[7] = {0b01110, 0b10001, 0b10001, 0b11111, 0b10001, 0b10001, 0b10001};
+
+    const std::uint8_t glyph_B[7] = {0b11110, 0b10001, 0b10001, 0b11110, 0b10001, 0b10001, 0b11110};
+
+    const std::uint8_t glyph_C[7] = {0b01111, 0b10000, 0b10000, 0b10000, 0b10000, 0b10000, 0b01111};
+
+    const std::uint8_t glyph_D[7] = {0b11110, 0b10001, 0b10001, 0b10001, 0b10001, 0b10001, 0b11110};
+
+    const std::uint8_t glyph_E[7] = {0b11111, 0b10000, 0b10000, 0b11110, 0b10000, 0b10000, 0b11111};
+
+    const std::uint8_t glyph_F[7] = {0b11111, 0b10000, 0b10000, 0b11110, 0b10000, 0b10000, 0b10000};
+
+    font_set_glyph(font_sprite, 'A' - 32, glyph_A);
+    font_set_glyph(font_sprite, 'B' - 32, glyph_B);
+    font_set_glyph(font_sprite, 'C' - 32, glyph_C);
+    font_set_glyph(font_sprite, 'D' - 32, glyph_D);
+    font_set_glyph(font_sprite, 'E' - 32, glyph_E);
+    font_set_glyph(font_sprite, 'F' - 32, glyph_F);
+
+    // Font: G-L
+
+    const std::uint8_t glyph_G[7] = {0b01111, 0b10000, 0b10000, 0b10111, 0b10001, 0b10001, 0b01111};
+
+    const std::uint8_t glyph_H[7] = {0b10001, 0b10001, 0b10001, 0b11111, 0b10001, 0b10001, 0b10001};
+
+    const std::uint8_t glyph_I[7] = {0b11111, 0b00100, 0b00100, 0b00100, 0b00100, 0b00100, 0b11111};
+
+    const std::uint8_t glyph_J[7] = {0b00111, 0b00010, 0b00010, 0b00010, 0b10010, 0b10010, 0b01100};
+
+    const std::uint8_t glyph_K[7] = {0b10001, 0b10010, 0b10100, 0b11000, 0b10100, 0b10010, 0b10001};
+
+    const std::uint8_t glyph_L[7] = {0b10000, 0b10000, 0b10000, 0b10000, 0b10000, 0b10000, 0b11111};
+
+    font_set_glyph(font_sprite, 'G' - 32, glyph_G);
+    font_set_glyph(font_sprite, 'H' - 32, glyph_H);
+    font_set_glyph(font_sprite, 'I' - 32, glyph_I);
+    font_set_glyph(font_sprite, 'J' - 32, glyph_J);
+    font_set_glyph(font_sprite, 'K' - 32, glyph_K);
+    font_set_glyph(font_sprite, 'L' - 32, glyph_L);
+
+    // Font: M-R
+
+    const std::uint8_t glyph_M[7] = {0b10001, 0b11011, 0b10101, 0b10101, 0b10001, 0b10001, 0b10001};
+
+    const std::uint8_t glyph_N[7] = {0b10001, 0b11001, 0b10101, 0b10011, 0b10001, 0b10001, 0b10001};
+
+    const std::uint8_t glyph_O[7] = {0b01110, 0b10001, 0b10001, 0b10001, 0b10001, 0b10001, 0b01110};
+
+    const std::uint8_t glyph_P[7] = {0b11110, 0b10001, 0b10001, 0b11110, 0b10000, 0b10000, 0b10000};
+
+    const std::uint8_t glyph_Q[7] = {0b01110, 0b10001, 0b10001, 0b10001, 0b10101, 0b10010, 0b01101};
+
+    const std::uint8_t glyph_R[7] = {0b11110, 0b10001, 0b10001, 0b11110, 0b10100, 0b10010, 0b10001};
+
+    font_set_glyph(font_sprite, 'M' - 32, glyph_M);
+    font_set_glyph(font_sprite, 'N' - 32, glyph_N);
+    font_set_glyph(font_sprite, 'O' - 32, glyph_O);
+    font_set_glyph(font_sprite, 'P' - 32, glyph_P);
+    font_set_glyph(font_sprite, 'Q' - 32, glyph_Q);
+    font_set_glyph(font_sprite, 'R' - 32, glyph_R);
+
+    // Font S-Z
+
+    const std::uint8_t glyph_S[7] = {0b01111, 0b10000, 0b10000, 0b01110, 0b00001, 0b00001, 0b11110};
+
+    const std::uint8_t glyph_T[7] = {0b11111, 0b00100, 0b00100, 0b00100, 0b00100, 0b00100, 0b00100};
+
+    const std::uint8_t glyph_U[7] = {0b10001, 0b10001, 0b10001, 0b10001, 0b10001, 0b10001, 0b01110};
+
+    const std::uint8_t glyph_V[7] = {0b10001, 0b10001, 0b10001, 0b10001, 0b10001, 0b01010, 0b00100};
+
+    const std::uint8_t glyph_W[7] = {0b10001, 0b10001, 0b10001, 0b10101, 0b10101, 0b10101, 0b01010};
+
+    const std::uint8_t glyph_X[7] = {0b10001, 0b10001, 0b01010, 0b00100, 0b01010, 0b10001, 0b10001};
+
+    const std::uint8_t glyph_Y[7] = {0b10001, 0b10001, 0b01010, 0b00100, 0b00100, 0b00100, 0b00100};
+
+    const std::uint8_t glyph_Z[7] = {0b11111, 0b00001, 0b00010, 0b00100, 0b01000, 0b10000, 0b11111};
+
+    font_set_glyph(font_sprite, 'S' - 32, glyph_S);
+    font_set_glyph(font_sprite, 'T' - 32, glyph_T);
+    font_set_glyph(font_sprite, 'U' - 32, glyph_U);
+    font_set_glyph(font_sprite, 'V' - 32, glyph_V);
+    font_set_glyph(font_sprite, 'W' - 32, glyph_W);
+    font_set_glyph(font_sprite, 'X' - 32, glyph_X);
+    font_set_glyph(font_sprite, 'Y' - 32, glyph_Y);
+    font_set_glyph(font_sprite, 'Z' - 32, glyph_Z);
+
+    // Font 0-9
+
+    const std::uint8_t glyph_0[7] = {0b01110, 0b10001, 0b10011, 0b10101, 0b11001, 0b10001, 0b01110};
+
+    const std::uint8_t glyph_1[7] = {0b00100, 0b01100, 0b00100, 0b00100, 0b00100, 0b00100, 0b01110};
+
+    const std::uint8_t glyph_2[7] = {0b01110, 0b10001, 0b00001, 0b00010, 0b00100, 0b01000, 0b11111};
+
+    const std::uint8_t glyph_3[7] = {0b11110, 0b00001, 0b00001, 0b01110, 0b00001, 0b00001, 0b11110};
+
+    const std::uint8_t glyph_4[7] = {0b00010, 0b00110, 0b01010, 0b10010, 0b11111, 0b00010, 0b00010};
+
+    const std::uint8_t glyph_5[7] = {0b11111, 0b10000, 0b10000, 0b11110, 0b00001, 0b00001, 0b11110};
+
+    const std::uint8_t glyph_6[7] = {0b01110, 0b10000, 0b10000, 0b11110, 0b10001, 0b10001, 0b01110};
+
+    const std::uint8_t glyph_7[7] = {0b11111, 0b00001, 0b00010, 0b00100, 0b01000, 0b01000, 0b01000};
+
+    const std::uint8_t glyph_8[7] = {0b01110, 0b10001, 0b10001, 0b01110, 0b10001, 0b10001, 0b01110};
+
+    const std::uint8_t glyph_9[7] = {0b01110, 0b10001, 0b10001, 0b01111, 0b00001, 0b00001, 0b01110};
+
+    font_set_glyph(font_sprite, '0' - 32, glyph_0);
+    font_set_glyph(font_sprite, '1' - 32, glyph_1);
+    font_set_glyph(font_sprite, '2' - 32, glyph_2);
+    font_set_glyph(font_sprite, '3' - 32, glyph_3);
+    font_set_glyph(font_sprite, '4' - 32, glyph_4);
+    font_set_glyph(font_sprite, '5' - 32, glyph_5);
+    font_set_glyph(font_sprite, '6' - 32, glyph_6);
+    font_set_glyph(font_sprite, '7' - 32, glyph_7);
+    font_set_glyph(font_sprite, '8' - 32, glyph_8);
+    font_set_glyph(font_sprite, '9' - 32, glyph_9);
+
     // Initialize GLFW ----------------------------------------------
     glfwSetErrorCallback(error_callback);
 
@@ -491,6 +677,8 @@ int main() {
     Game game;
     game_init(&game);
 
+    std::size_t score = 0;
+
     std::uint8_t *death_counters = new std::uint8_t[game.num_aliens];
 
     for (std::size_t i = 0; i < game.num_aliens; ++i) {
@@ -507,6 +695,14 @@ int main() {
         glfwPollEvents();
 
         buffer_clear(&framebuffer, clear_color);
+
+        buffer_draw_text(&framebuffer, font_sprite, "SCORE", 20, 450, rgb_to_uint32(0, 255, 0));
+
+        buffer_draw_number(&framebuffer, font_sprite, score, 120, 450, rgb_to_uint32(0, 255, 0));
+
+        buffer_draw_text(&framebuffer, font_sprite, "CREDIT 99", 450, 8, rgb_to_uint32(0, 255, 0));
+
+        buffer_draw_line(&framebuffer, 34, rgb_to_uint32(0, 255, 0));
 
         // Draw Aliens
         for (std::size_t ai = 0; ai < game.num_aliens; ++ai) {
@@ -611,6 +807,8 @@ int main() {
 
                 if (overlap) {
 
+                    score += 10 * (4 - game.aliens[ai].type);
+
                     game.aliens[ai].type = ALIEN_DEAD;
 
                     // Death Sprite zentrieren
@@ -631,7 +829,7 @@ int main() {
             ++alien_animation[i].time;
 
             if (alien_animation[i].time ==
-                alien_animation[i].num_frames * alien_animation->frame_duration) {
+                alien_animation[i].num_frames * alien_animation[i].frame_duration) {
 
                 if (alien_animation[i].loop) {
                     alien_animation[i].time = 0;
