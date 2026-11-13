@@ -11,10 +11,22 @@ find_package(glfw3 REQUIRED)
 
 add_executable(space_invaders
     src/main.cpp
+    src/game.cpp
+    src/player.cpp
+    src/alien.cpp
+    src/bullet.cpp
+    src/sprite.cpp
+    src/renderer.cpp
+    src/input.cpp
+    src/font.cpp
 )
+
+target_include_directories(space_invaders PRIVATE include)
 
 target_link_libraries(space_invaders PRIVATE
     glfw
     GLEW::GLEW
     OpenGL::GL
 )
+
+file(COPY shaders DESTINATION ${CMAKE_BINARY_DIR})
