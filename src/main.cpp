@@ -1,4 +1,5 @@
 
+#include "alien.hpp"
 #include "font.hpp"
 #include "game.hpp"
 #include "input.hpp"
@@ -196,6 +197,7 @@ int main() {
         }
 
         game.updateBullets();
+        game.updateAliens();
 
         game.checkCollisions(bulletSprite, alienAnimations, alienDeathSprite);
 

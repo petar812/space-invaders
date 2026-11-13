@@ -1,11 +1,14 @@
 #include "game.hpp"
+#include "alien.hpp"
 #include <cstddef>
 #include <vector>
 
 Game::Game()
     : width(640)
     , height(480)
-    , score(0) {
+    , score(0)
+    , alienDirection(1)
+    , alienSpeed(1) {
 
     // Initialize aliens
     for (std::size_t yi = 0; yi < 5; ++yi) {
@@ -126,6 +129,65 @@ void Game::checkCollisions(
             bullet = bullets.erase(bullet);
         } else {
             ++bullet;
+        }
+    }
+}
+
+void Game::updateAliens() {
+
+    constexpr std::size_t ALIEN_WIDTH = 36;
+    constexpr std::size_t DROP_DISTANCE = 12;
+
+    bool reachEdge = false;
+
+    // Check Screen Boundaries
+    for (const Alien &alien : aliens) {
+
+        if (alien.getType() == ALIEN_DEAD) {
+
+            continue;
+        }
+
+        if (alienDirection > 0 && alien.getX() + ALIEN_WIDTH + alienSpeed >= width) {
+
+            reachEdge = true;
+        }
+
+        if (alienDirection < 0 && alien.getX() <= alienSpeed) {
+
+            reachEdge = true;
+        }
+    }
+
+    // Check Direction And Move Down
+    if (reachEdge) {
+
+        alienDirection *= -1;
+
+        for (Alien &alien : aliens) {
+
+            if (alien.getType() == ALIEN_DEAD) {
+
+                continue;
+            }
+
+            alien.setY(alien.getY() - DROP_DISTANCE);
+        }
+    }
+
+    // Move Aliens Horizontally
+    for (Alien &alien : aliens) {
+
+        if (alien.getType() == ALIEN_DEAD) {
+
+            continue;
+        }
+
+        if (alienDirection > 0) {
+
+            alien.setX(alien.getX() + alienSpeed);
+        } else {
+            alien.setX(alien.getX() - alienSpeed);
         }
     }
 }

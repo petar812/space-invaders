@@ -28,6 +28,10 @@ void Alien::setX(std::size_t new_x) {
     x = new_x;
 }
 
+void Alien::setY(std::size_t new_y) {
+    y = new_y;
+}
+
 std::size_t Alien::getDeathTimer() const {
     return deathTimer;
 }
