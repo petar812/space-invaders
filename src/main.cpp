@@ -175,7 +175,7 @@ int main() {
         renderer.drawText(font, "SCORE", 30, 440, uiColor);
         renderer.drawNumber(font, game.getScore(), 40 + 6 * 5 * 3, 440, uiColor);
 
-        renderer.drawText(font, "CREDIT 99", 450, 8, uiColor);
+        renderer.drawText(font, "CREDIT 67", 450, 8, uiColor);
 
         renderer.drawLine(36, uiColor);
 

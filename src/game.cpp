@@ -8,7 +8,8 @@ Game::Game()
     , height(480)
     , score(0)
     , alienDirection(1)
-    , alienSpeed(1) {
+    , alienSpeed(0.5)
+    , alienMovementAccumulator(0.0) {
 
     // Initialize aliens
     for (std::size_t yi = 0; yi < 5; ++yi) {
@@ -138,6 +139,13 @@ void Game::updateAliens() {
     constexpr std::size_t ALIEN_WIDTH = 36;
     constexpr std::size_t DROP_DISTANCE = 12;
 
+    std::size_t aliveAliens = countAliveAliens();
+    alienSpeed = 0.5 + (55.0 - aliveAliens) * 0.04;
+
+    alienMovementAccumulator += alienSpeed;
+    std::size_t movementStep = static_cast<std::size_t>(alienMovementAccumulator);
+    alienMovementAccumulator -= movementStep;
+
     bool reachEdge = false;
 
     // Check Screen Boundaries
@@ -148,12 +156,12 @@ void Game::updateAliens() {
             continue;
         }
 
-        if (alienDirection > 0 && alien.getX() + ALIEN_WIDTH + alienSpeed >= width) {
+        if (alienDirection > 0 && alien.getX() + ALIEN_WIDTH + movementStep >= width) {
 
             reachEdge = true;
         }
 
-        if (alienDirection < 0 && alien.getX() <= alienSpeed) {
+        if (alienDirection < 0 && alien.getX() <= movementStep) {
 
             reachEdge = true;
         }
@@ -185,9 +193,24 @@ void Game::updateAliens() {
 
         if (alienDirection > 0) {
 
-            alien.setX(alien.getX() + alienSpeed);
+            alien.setX(alien.getX() + movementStep);
         } else {
-            alien.setX(alien.getX() - alienSpeed);
+            alien.setX(alien.getX() - movementStep);
         }
     }
+}
+
+std::size_t Game::countAliveAliens() const {
+
+    std::size_t count = 0;
+
+    for (const Alien &alien : aliens) {
+
+        if (alien.getType() != ALIEN_DEAD) {
+
+            count++;
+        }
+    }
+
+    return count;
 }
