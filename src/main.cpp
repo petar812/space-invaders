@@ -183,7 +183,7 @@ int main() {
             playerSprite,
             game.getPlayer().getX(),
             game.getPlayer().getY(),
-            Renderer::rgbToUint32(128, 0, 0),
+            Renderer::rgbToUint32(0, 0, 128),
             3);
 
         for (const Bullet &bullet : game.getBullets()) {
@@ -192,12 +192,11 @@ int main() {
                 bulletSprite,
                 bullet.getX(),
                 bullet.getY(),
-                Renderer::rgbToUint32(128, 0, 0),
+                Renderer::rgbToUint32(0, 0, 128),
                 3);
         }
 
-        game.updateBullets();
-        game.updateAliens();
+        game.update();
 
         game.checkCollisions(bulletSprite, alienAnimations, alienDeathSprite);
 

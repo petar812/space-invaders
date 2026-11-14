@@ -14,6 +14,10 @@ std::size_t Bullet::getY() const {
     return y;
 }
 
-void Bullet::move() {
+int Bullet::getDir() const {
+    return dir;
+}
+
+void Bullet::update() {
     y += dir;
 }
