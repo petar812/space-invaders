@@ -20,12 +20,14 @@ int main() {
     std::uint8_t playerData[] = {
         0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, // .....@.....
         0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, // ....@@@....
-        0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, // ....@@@....
+        0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, // ....@@@....
         0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, // .@@@@@@@@@.
         1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, // @@@@@@@@@@@
-        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, // @@@@@@@@@@@
-        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, // @@@@@@@@@@@
+        1, 1, 1, 0, 0, 1, 0, 0, 1, 1, 1, // @@@@@@@@@@@
+        1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, // @@@@@@@@@@@
     };
+
+    Sprite playerSprite(11, 7, playerData);
 
     // Bullet Sprite ---------------------------------------------------------
     std::uint8_t bulletData[] = {1, 1, 1};
@@ -33,8 +35,6 @@ int main() {
     Sprite bulletSprite(1, 3, bulletData);
 
     // Alien Sprites ------------------------------------------------------------
-
-    Sprite playerSprite(11, 7, playerData);
 
     // Alien A - Frame 1
     std::uint8_t alienAFrame1[64] = {
@@ -198,7 +198,13 @@ int main() {
 
         game.update();
 
-        game.checkCollisions(bulletSprite, alienAnimations, alienDeathSprite);
+        game.checkCollisions(bulletSprite, alienAnimations, alienDeathSprite, playerSprite);
+
+        for (int i = 0; i < game.getPlayer().getLife(); ++i) {
+
+            renderer
+                .drawSprite(playerSprite, 10 + (i * 40), 8, Renderer::rgbToUint32(0, 0, 125), 3);
+        }
 
         for (const Alien &alien : game.getAliens()) {
             if (alien.getType() == ALIEN_DEAD) {

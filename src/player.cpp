@@ -18,6 +18,13 @@ std::size_t Player::getLife() const {
     return life;
 }
 
+std::size_t Player::loseLife() {
+    if (life > 0) {
+        --life;
+    };
+
+    return life;
+}
 void Player::move(int direction, std::size_t game_width, std::size_t player_width) {
 
     int new_x = static_cast<int>(x) + direction;

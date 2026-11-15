@@ -1,5 +1,7 @@
 #include "game.hpp"
 #include "alien.hpp"
+#include "bullet.hpp"
+#include "sprite.hpp"
 #include <cstddef>
 #include <random>
 #include <vector>
@@ -61,7 +63,7 @@ void Game::addBullet() {
         return;
     }
 
-    bullets.emplace_back(player.getX() + 15, player.getY() + 21, 2);
+    bullets.emplace_back(player.getX() + 15, player.getY() + 21, 2, PLAYER_BULLET);
 }
 
 void Game::updateBullets() {
@@ -98,14 +100,15 @@ std::size_t Game::getScore() const {
 void Game::checkCollisions(
     const Sprite &bulletSprite,
     const SpriteAnimation alienAnimations[3],
-    const Sprite &alienDeathSprite) {
+    const Sprite &alienDeathSprite,
+    const Sprite &playerSprite) {
     constexpr std::size_t SCALE = 3;
 
     for (auto bullet = bullets.begin(); bullet != bullets.end();) {
 
         bool hit = false;
 
-        if (bullet->getDir() == 2) {
+        if (bullet->getType() == PLAYER_BULLET) {
 
             for (Alien &alien : aliens) {
 
@@ -134,6 +137,19 @@ void Game::checkCollisions(
                     hit = true;
                     break;
                 }
+            }
+        } else if (bullet->getType() == ENEMY_BULLET) {
+
+            bool overlap = bullet->getX() < player.getX() + playerSprite.getWidth() * SCALE &&
+                           bullet->getX() + bulletSprite.getWidth() * SCALE > player.getX() &&
+                           bullet->getY() < player.getY() + playerSprite.getHeight() * SCALE &&
+                           bullet->getY() + bulletSprite.getHeight() * SCALE > player.getY();
+
+            if (overlap) {
+
+                player.loseLife();
+
+                hit = true;
             }
         }
 
@@ -246,7 +262,8 @@ void Game::addEnemyBullet() {
     bullets.emplace_back(
         aliveAliens[alienToShoot]->getX() + 18,
         aliveAliens[alienToShoot]->getY() - 24,
-        -2);
+        -2,
+        ENEMY_BULLET);
 }
 
 void Game::update() {
