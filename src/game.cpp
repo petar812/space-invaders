@@ -1,7 +1,9 @@
 #include "game.hpp"
 #include "alien.hpp"
 #include "bullet.hpp"
+#include "gameState.hpp"
 #include "sprite.hpp"
+
 #include <cstddef>
 #include <random>
 #include <vector>
@@ -13,28 +15,10 @@ Game::Game()
     , alienDirection(1)
     , alienSpeed(0.5)
     , alienMovementAccumulator(0.0)
-    , gen(rd()) {
+    , gen(rd())
+    , state(GameState::MENU) {
 
-    // Initialize aliens
-    for (std::size_t yi = 0; yi < 5; ++yi) {
-        for (std::size_t xi = 0; xi < 11; ++xi) {
-
-            std::size_t x = 36 * xi + 122;
-            std::size_t y = 29 * yi + 260;
-
-            std::uint8_t type;
-
-            if (yi == 4) {
-                type = ALIEN_TYPE_A;
-            } else if (yi >= 2) {
-                type = ALIEN_TYPE_B;
-            } else {
-                type = ALIEN_TYPE_C;
-            }
-
-            aliens.emplace_back(x, y, type);
-        }
-    }
+    initializeAliens();
 }
 
 std::size_t Game::getWidth() const {
@@ -161,7 +145,7 @@ void Game::checkCollisions(
     }
 }
 
-void Game::updateAliens() {
+bool Game::updateAliens() {
     constexpr std::size_t ALIEN_WIDTH = 36;
     constexpr std::size_t DROP_DISTANCE = 12;
 
@@ -173,6 +157,7 @@ void Game::updateAliens() {
     alienMovementAccumulator -= movementStep;
 
     bool reachEdge = false;
+    bool reachPlayer = false;
 
     // Check Screen Boundaries
     for (const Alien &alien : aliens) {
@@ -224,6 +209,23 @@ void Game::updateAliens() {
             alien.setX(alien.getX() - movementStep);
         }
     }
+
+    // Check Player Collision
+    for (Alien &alien : aliens) {
+        if (alien.getType() == ALIEN_DEAD) {
+
+            continue;
+        }
+        if (alien.getY() <= player.getY() + 21 && alien.getX() <= player.getX() + 33 &&
+            alien.getX() + alien.getWidth() * 3 > player.getX()) {
+
+            return true;
+        } else if (alien.getY() + alien.getHeight() * 3 < 36) {
+
+            return true;
+        }
+    }
+    return false;
 }
 
 std::size_t Game::countAliveAliens() const {
@@ -270,5 +272,47 @@ void Game::update() {
 
     updateBullets();
     updateEnemyBullet();
-    updateAliens();
+}
+
+void Game::reset() {
+
+    score = 0;
+    alienDirection = 1;
+    alienSpeed = 0.5;
+    alienMovementAccumulator = 0.0;
+    initializeAliens();
+    bullets.clear();
+    player.resetPlayer();
+}
+GameState Game::getState() const {
+    return state;
+}
+
+void Game::setState(GameState newState) {
+    state = newState;
+}
+
+void Game::initializeAliens() {
+
+    aliens.clear();
+
+    for (std::size_t yi = 0; yi < 5; ++yi) {
+        for (std::size_t xi = 0; xi < 11; ++xi) {
+
+            std::size_t x = 36 * xi + 122;
+            std::size_t y = 29 * yi + 260;
+
+            std::uint8_t type;
+
+            if (yi == 4) {
+                type = ALIEN_TYPE_A;
+            } else if (yi >= 2) {
+                type = ALIEN_TYPE_B;
+            } else {
+                type = ALIEN_TYPE_C;
+            }
+
+            aliens.emplace_back(x, y, type);
+        }
+    }
 }

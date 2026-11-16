@@ -24,6 +24,8 @@ class Alien {
     std::size_t getX() const;
     std::size_t getY() const;
     std::uint8_t getType() const;
+    std::size_t getHeight() const;
+    std::size_t getWidth() const;
 
     void kill();
     void setX(std::size_t new_x);

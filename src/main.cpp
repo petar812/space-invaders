@@ -2,6 +2,7 @@
 #include "alien.hpp"
 #include "font.hpp"
 #include "game.hpp"
+#include "gameState.hpp"
 #include "input.hpp"
 #include "renderer.hpp"
 #include "sprite.hpp"
@@ -151,98 +152,159 @@ int main() {
 
         renderer.pollEvents();
 
-        int playerMoveDirection = 0;
+        switch (game.getState()) {
 
-        if (input.isMovingRight()) {
-            playerMoveDirection += 1;
-        }
+        case GameState::MENU:
 
-        if (input.isMovingLeft()) {
-            playerMoveDirection -= 1;
-        }
+            renderer.clear(Renderer::rgbToUint32(0, 0, 0));
 
-        game.getPlayer().move(playerMoveDirection, game.getWidth(), playerSprite.getWidth() * 3);
+            renderer.drawText(font, "SPACE INVADERS", 194, 270, Renderer::rgbToUint32(0, 255, 0));
+            renderer
+                .drawText(font, "PRESS ENTER TO START", 140, 220, Renderer::rgbToUint32(0, 255, 0));
 
-        if (input.isFirePressed()) {
-            game.addBullet();
-            input.resetFire();
-        }
+            if (input.isEnterPressed()) {
+                game.setState(GameState::PLAYING);
+                input.resteEnter();
+            }
 
-        renderer.clear(Renderer::rgbToUint32(0, 0, 0));
+            renderer.render();
+            renderer.swapBuffers();
+            break;
 
-        std::uint32_t uiColor = Renderer::rgbToUint32(0, 255, 0);
+        case GameState::PLAYING: {
+            int playerMoveDirection = 0;
 
-        renderer.drawText(font, "SCORE", 30, 440, uiColor);
-        renderer.drawNumber(font, game.getScore(), 40 + 6 * 5 * 3, 440, uiColor);
+            if (input.isMovingRight()) {
+                playerMoveDirection += 1;
+            }
 
-        renderer.drawText(font, "CREDIT 67", 450, 8, uiColor);
+            if (input.isMovingLeft()) {
+                playerMoveDirection -= 1;
+            }
 
-        renderer.drawLine(36, uiColor);
+            game.getPlayer().move(
+                playerMoveDirection,
+                game.getWidth(),
+                playerSprite.getWidth() * 3);
 
-        renderer.drawSprite(
-            playerSprite,
-            game.getPlayer().getX(),
-            game.getPlayer().getY(),
-            Renderer::rgbToUint32(0, 0, 128),
-            3);
+            if (input.isFirePressed()) {
+                game.addBullet();
+                input.resetFire();
+            }
 
-        for (const Bullet &bullet : game.getBullets()) {
+            renderer.clear(Renderer::rgbToUint32(0, 0, 0));
+
+            std::uint32_t uiColor = Renderer::rgbToUint32(0, 255, 0);
+
+            renderer.drawText(font, "SCORE", 30, 440, uiColor);
+            renderer.drawNumber(font, game.getScore(), 40 + 6 * 5 * 3, 440, uiColor);
+
+            renderer.drawText(font, "CREDIT 67", 450, 8, uiColor);
+
+            renderer.drawLine(36, uiColor);
 
             renderer.drawSprite(
-                bulletSprite,
-                bullet.getX(),
-                bullet.getY(),
+                playerSprite,
+                game.getPlayer().getX(),
+                game.getPlayer().getY(),
                 Renderer::rgbToUint32(0, 0, 128),
                 3);
-        }
 
-        game.update();
+            for (const Bullet &bullet : game.getBullets()) {
 
-        game.checkCollisions(bulletSprite, alienAnimations, alienDeathSprite, playerSprite);
+                renderer.drawSprite(
+                    bulletSprite,
+                    bullet.getX(),
+                    bullet.getY(),
+                    Renderer::rgbToUint32(0, 0, 128),
+                    3);
+            }
 
-        for (int i = 0; i < game.getPlayer().getLife(); ++i) {
+            game.update();
 
-            renderer
-                .drawSprite(playerSprite, 10 + (i * 40), 8, Renderer::rgbToUint32(0, 0, 125), 3);
-        }
+            game.checkCollisions(bulletSprite, alienAnimations, alienDeathSprite, playerSprite);
 
-        for (const Alien &alien : game.getAliens()) {
-            if (alien.getType() == ALIEN_DEAD) {
-                if (alien.getDeathTimer() == 0) {
+            if (game.getPlayer().getLife() == 0 || game.updateAliens()) {
+                game.setState(GameState::GAME_OVER);
+            }
+
+            for (int i = 0; i < game.getPlayer().getLife(); ++i) {
+
+                renderer.drawSprite(
+                    playerSprite,
+                    10 + (i * 40),
+                    8,
+                    Renderer::rgbToUint32(0, 0, 125),
+                    3);
+            }
+
+            for (const Alien &alien : game.getAliens()) {
+                if (alien.getType() == ALIEN_DEAD) {
+                    if (alien.getDeathTimer() == 0) {
+                        continue;
+                    }
+
+                    renderer.drawSprite(
+                        alienDeathSprite,
+                        alien.getX(),
+                        alien.getY(),
+                        Renderer::rgbToUint32(128, 0, 0),
+                        3);
+
                     continue;
                 }
 
+                const Sprite &sprite = alienAnimations[alien.getType() - 1].getCurrentFrame();
+
                 renderer.drawSprite(
-                    alienDeathSprite,
+                    sprite,
                     alien.getX(),
                     alien.getY(),
                     Renderer::rgbToUint32(128, 0, 0),
                     3);
-
-                continue;
             }
 
-            const Sprite &sprite = alienAnimations[alien.getType() - 1].getCurrentFrame();
+            for (Alien &alien : game.getAliens()) {
+                alien.updateDeathTimer();
+            }
 
-            renderer.drawSprite(
-                sprite,
-                alien.getX(),
-                alien.getY(),
-                Renderer::rgbToUint32(128, 0, 0),
-                3);
+            for (SpriteAnimation &animation : alienAnimations) {
+
+                animation.update();
+            }
+
+            renderer.render();
+            renderer.swapBuffers();
+
+            break;
         }
 
-        for (Alien &alien : game.getAliens()) {
-            alien.updateDeathTimer();
+        case GameState::GAME_OVER:
+
+            renderer.clear(Renderer::rgbToUint32(0, 0, 0));
+
+            renderer.drawText(font, "GAME OVER", 239, 270, Renderer::rgbToUint32(0, 255, 0));
+            renderer.drawText(
+                font,
+                "PRESS ENTER TO RESTART",
+                113,
+                220,
+                Renderer::rgbToUint32(0, 255, 0));
+
+            if (input.isEnterPressed()) {
+                game.setState(GameState::PLAYING);
+                game.reset();
+                input.resteEnter();
+            }
+
+            renderer.render();
+            renderer.swapBuffers();
+            break;
+
+        default:
+
+            break;
         }
-
-        for (SpriteAnimation &animation : alienAnimations) {
-
-            animation.update();
-        }
-
-        renderer.render();
-        renderer.swapBuffers();
     }
 
     return EXIT_SUCCESS;

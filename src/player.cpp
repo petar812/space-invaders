@@ -25,6 +25,13 @@ std::size_t Player::loseLife() {
 
     return life;
 }
+
+void Player::resetPlayer() {
+    x = 303;
+    y = 40;
+    life = 3;
+}
+
 void Player::move(int direction, std::size_t game_width, std::size_t player_width) {
 
     int new_x = static_cast<int>(x) + direction;

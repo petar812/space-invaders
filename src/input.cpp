@@ -1,5 +1,6 @@
 
 #include "input.hpp"
+#include <GLFW/glfw3.h>
 
 Input *Input::instance = nullptr;
 
@@ -7,7 +8,8 @@ Input::Input()
     : moveLeft(false)
     , moveRight(false)
     , firePressed(false)
-    , gameRunning(true) {}
+    , gameRunning(true)
+    , enterPressed(false) {}
 
 void Input::initialize(GLFWwindow *window) {
     instance = this;
@@ -53,6 +55,12 @@ void Input::keyCallback(GLFWwindow *window, int key, int scancode, int action, i
         }
         break;
 
+    case GLFW_KEY_ENTER:
+        if (action == GLFW_PRESS) {
+            instance->enterPressed = true;
+        }
+        break;
+
     default:
         break;
     }
@@ -74,6 +82,14 @@ bool Input::isGameRunning() const {
     return gameRunning;
 }
 
+bool Input::isEnterPressed() const {
+    return enterPressed;
+}
+
 void Input::resetFire() {
     firePressed = false;
+}
+
+void Input::resteEnter() {
+    enterPressed = false;
 }

@@ -34,7 +34,6 @@ class Game {
 
     void updateBullets();
     void updateEnemyBullet();
-    void updateAliens();
 
     std::random_device rd;
     std::mt19937 gen;
@@ -69,4 +68,5 @@ class Game {
     void setState(GameState newState);
 
     void initializeAliens();
+    bool updateAliens();
 };
