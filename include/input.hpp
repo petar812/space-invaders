@@ -10,6 +10,7 @@ class Input {
     bool moveRight;
     bool firePressed;
     bool gameRunning;
+    bool enterPressed;
 
     static void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods);
 
@@ -24,6 +25,8 @@ class Input {
     bool isMovingRight() const;
     bool isFirePressed() const;
     bool isGameRunning() const;
+    bool isEnterPressed() const;
 
     void resetFire();
+    void resteEnter();
 };

@@ -15,6 +15,9 @@ class Player {
     std::size_t getX() const;
     std::size_t getY() const;
     std::size_t getLife() const;
+    std::size_t loseLife();
+
+    void resetPlayer();
 
     void move(int direction, std::size_t game_width, std::size_t player_width);
 };

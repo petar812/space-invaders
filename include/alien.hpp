@@ -27,6 +27,7 @@ class Alien {
 
     void kill();
     void setX(std::size_t new_x);
+    void setY(std::size_t new_y);
 
     std::size_t getDeathTimer() const;
     void updateDeathTimer();
