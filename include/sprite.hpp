@@ -23,13 +23,15 @@ class SpriteAnimation {
   private:
     bool loop;
     std::size_t num_frames;
-    std::size_t frame_duration;
-    std::size_t time;
+    double frame_duration;
+    double timer;
     Sprite **frames;
+    std::size_t current_frame;
+    std::size_t getCurrent_frame;
 
   public:
-    SpriteAnimation(bool loop, std::size_t num_frames, std::size_t frame_duration, Sprite **frames);
+    SpriteAnimation(bool loop, std::size_t num_frames, double frame_duration, Sprite **frames);
 
     const Sprite &getCurrentFrame() const;
-    void update();
+    void update(double deltaTime);
 };

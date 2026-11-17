@@ -24,28 +24,40 @@ std::uint8_t *Sprite::getData() const {
 }
 
 SpriteAnimation::SpriteAnimation(
-    bool loop, std::size_t num_frames, std::size_t frame_duration, Sprite **frames)
+    bool loop, std::size_t num_frames, double frame_duration, Sprite **frames)
     : loop(loop)
     , num_frames(num_frames)
     , frame_duration(frame_duration)
-    , time(0)
-    , frames(frames) {}
+    , timer(0.0)
+    , frames(frames)
+    , current_frame(0) {}
 
 const Sprite &SpriteAnimation::getCurrentFrame() const {
 
-    std::size_t current_frame = time / frame_duration;
     return *frames[current_frame];
 }
 
-void SpriteAnimation::update() {
+void SpriteAnimation::update(double deltaTime) {
 
-    ++time;
+    timer += deltaTime;
 
-    if (time == num_frames * frame_duration) {
+    while (timer >= frame_duration) {
+
+        if (!loop && current_frame == num_frames - 1) {
+
+            return;
+        }
 
         if (loop) {
-
-            time = 0;
+            if (current_frame < num_frames - 1) {
+                current_frame++;
+            } else {
+                current_frame = 0;
+            }
+            timer -= frame_duration;
+        } else {
+            current_frame = num_frames - 1;
+            timer -= frame_duration;
         }
     }
 }

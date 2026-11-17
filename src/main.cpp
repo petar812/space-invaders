@@ -7,6 +7,7 @@
 #include "renderer.hpp"
 #include "sprite.hpp"
 
+#include <chrono>
 #include <cstdint>
 #include <cstdlib>
 
@@ -137,15 +138,17 @@ int main() {
     Sprite *alienCFrames[] = {&alienSprites[4], &alienSprites[5]};
 
     SpriteAnimation alienAnimations[3] = {
-        SpriteAnimation(true, 2, 10, alienAFrames),
-        SpriteAnimation(true, 2, 10, alienBFrames),
-        SpriteAnimation(true, 2, 10, alienCFrames)};
+        SpriteAnimation(true, 2, 0.5, alienAFrames),
+        SpriteAnimation(true, 2, 0.4, alienBFrames),
+        SpriteAnimation(true, 2, 0.3, alienCFrames)};
 
     if (!renderer.initialize()) {
         return EXIT_FAILURE;
     }
 
     input.initialize(renderer.getWindow());
+
+    auto lastFrameTime = std::chrono::steady_clock::now();
 
     // Game Loop ------------------------------------------------
     while (!renderer.shouldClose() && input.isGameRunning()) {
@@ -172,6 +175,11 @@ int main() {
             break;
 
         case GameState::PLAYING: {
+
+            auto currentTime = std::chrono::steady_clock::now();
+            double deltaTime = std::chrono::duration<double>(currentTime - lastFrameTime).count();
+            lastFrameTime = currentTime;
+
             int playerMoveDirection = 0;
 
             if (input.isMovingRight()) {
@@ -270,7 +278,7 @@ int main() {
 
             for (SpriteAnimation &animation : alienAnimations) {
 
-                animation.update();
+                animation.update(deltaTime);
             }
 
             renderer.render();
